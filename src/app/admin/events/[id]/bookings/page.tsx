@@ -72,11 +72,11 @@ export default function EventBookingsPage({ params }: BookingsPageProps) {
   const getStatusBadge = (status: Booking['status']) => {
     switch (status) {
       case 'confirmed':
-        return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium">Confirmed</Badge>;
+        return <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">Confirmed</Badge>;
       case 'pending':
-        return <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-medium">Pending</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 font-medium">Pending</Badge>;
       case 'cancelled':
-        return <Badge variant="destructive" className="font-medium">Cancelled</Badge>;
+        return <Badge variant="destructive" className="bg-red-500/20 text-red-400 border border-red-500/30 font-medium">Cancelled</Badge>;
       default:
         return null;
     }
@@ -91,114 +91,126 @@ export default function EventBookingsPage({ params }: BookingsPageProps) {
   const cancelledCount = bookings.filter((b) => b.status === "cancelled").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in-up">
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <Link
             href="/admin/events"
-            className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1"
+            className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Events
           </Link>
-          <h1 className="text-3xl font-extrabold tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-gradient">
             {loading ? "Loading bookings..." : `${event?.title} — Bookings`}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground font-light">
             {loading
               ? "Checking guest details..."
               : `Event Date: ${event ? new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'long' }) : ""}`}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} className="w-fit self-end">
-          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+        <Button variant="outline" size="sm" onClick={fetchData} className="w-fit self-end h-10 px-4 rounded-xl border-white/10 hover:bg-white/5 shadow-sm">
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
 
       {/* Analytics Widget */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="hover:border-primary/30 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-            <Ticket className="h-4 w-4 text-primary" />
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Ticket className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalBookings}</div>
-            <p className="text-xs text-muted-foreground">Reservations received</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black">{loading ? "..." : totalBookings}</div>
+            <p className="text-xs text-muted-foreground mt-1">Reservations received</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Active Tickets Booked</CardTitle>
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Tickets</CardTitle>
+            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+              <CheckCircle className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalTickets}</div>
-            <p className="text-xs text-muted-foreground">Seats allocated successfully</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black text-emerald-400">{loading ? "..." : totalTickets}</div>
+            <p className="text-xs text-muted-foreground mt-1">Seats allocated successfully</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+              <AlertCircle className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Bookings awaiting action</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black text-amber-400">{loading ? "..." : pendingCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Bookings awaiting action</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Cancelled Bookings</CardTitle>
-            <XCircle className="h-4 w-4 text-destructive" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cancelled</CardTitle>
+            <div className="p-2 bg-red-500/10 rounded-lg text-red-400">
+              <XCircle className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : cancelledCount}</div>
-            <p className="text-xs text-muted-foreground">Returned to pool</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black text-red-400">{loading ? "..." : cancelledCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Returned to pool</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Bookings Table */}
-      <Card className="shadow-sm border-muted-foreground/10 overflow-hidden">
-        <CardHeader className="bg-card/50">
-          <CardTitle>Guest Reservations</CardTitle>
+      <Card className="glass-card border-white/10 overflow-hidden">
+        <CardHeader className="bg-white/5 border-b border-white/5 pb-4">
+          <CardTitle className="font-heading text-xl">Guest Reservations</CardTitle>
           <CardDescription>Review name, email, seat count, and change booking status.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4 animate-pulse">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p>Fetching reservation listings...</p>
             </div>
           ) : bookings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-              <AlertCircle className="h-8 w-8 text-muted-foreground" />
-              <p>No bookings found for this event.</p>
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-4">
+              <AlertCircle className="h-10 w-10 text-muted-foreground/50" />
+              <p className="text-lg">No bookings found for this event.</p>
             </div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6">Guest Name</TableHead>
-                  <TableHead>Email Address</TableHead>
-                  <TableHead className="text-center">Tickets</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Booked On</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+              <TableHeader className="bg-black/20">
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="pl-6 font-semibold text-muted-foreground h-12">Guest Name</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground h-12">Email Address</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground h-12">Tickets</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground h-12">Status</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground h-12">Booked On</TableHead>
+                  <TableHead className="text-right pr-6 font-semibold text-muted-foreground h-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {bookings.map((booking) => (
-                  <TableRow key={booking.id} className="hover:bg-accent/30">
+                  <TableRow key={booking.id} className="border-white/5 hover:bg-white/5 transition-colors">
                     <TableCell className="font-semibold pl-6">{booking.customer_name}</TableCell>
-                    <TableCell className="font-mono text-xs">{booking.customer_email}</TableCell>
+                    <TableCell className="font-mono text-sm text-muted-foreground">{booking.customer_email}</TableCell>
                     <TableCell className="text-center font-bold text-primary">{booking.ticket_quantity}</TableCell>
                     <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
+                    <TableCell className="text-sm text-muted-foreground">
                       {new Date(booking.created_at).toLocaleString('en-US', {
                         dateStyle: 'medium',
                         timeStyle: 'short',
@@ -207,32 +219,32 @@ export default function EventBookingsPage({ params }: BookingsPageProps) {
                     <TableCell className="text-right pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild disabled={statusLoadingMap[booking.id]}>
-                          <Button variant="outline" size="sm" className="gap-2">
+                          <Button variant="outline" size="sm" className="gap-2 border-white/10 hover:bg-white/10 rounded-lg">
                             {statusLoadingMap[booking.id] ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               "Status"
                             )}
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-white/10">
                           <DropdownMenuItem
                             onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                            className="cursor-pointer text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
+                            className="cursor-pointer text-emerald-400 focus:text-emerald-300 focus:bg-emerald-500/20"
                             disabled={booking.status === 'confirmed'}
                           >
                             Mark Confirmed
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleStatusChange(booking.id, 'pending')}
-                            className="cursor-pointer text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                            className="cursor-pointer text-amber-400 focus:text-amber-300 focus:bg-amber-500/20"
                             disabled={booking.status === 'pending'}
                           >
                             Mark Pending
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                            className="cursor-pointer text-destructive focus:text-destructive focus:bg-red-50"
+                            className="cursor-pointer text-red-400 focus:text-red-300 focus:bg-red-500/20"
                             disabled={booking.status === 'cancelled'}
                           >
                             Cancel Booking

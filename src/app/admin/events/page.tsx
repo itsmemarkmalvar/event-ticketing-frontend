@@ -57,6 +57,9 @@ export default function EventsDashboard() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -121,15 +124,24 @@ export default function EventsDashboard() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this event? This will delete all its bookings.")) {
-      try {
-        await deleteEvent(id);
-        toast.success("Event deleted successfully.");
-        fetchAllEvents();
-      } catch (error) {
-        toast.error("Failed to delete event.");
-      }
+  const openDeleteConfirm = (id: number) => {
+    setDeletingEventId(id);
+    setConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingEventId) return;
+    try {
+      setDeleting(true);
+      await deleteEvent(deletingEventId);
+      toast.success("Event deleted successfully.");
+      fetchAllEvents();
+    } catch (error) {
+      toast.error("Failed to delete event.");
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteOpen(false);
+      setDeletingEventId(null);
     }
   };
 
@@ -139,12 +151,46 @@ export default function EventsDashboard() {
   const totalBooked = events.reduce((sum, e) => sum + e.booked_tickets, 0);
   const overallOccupancy = totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
 
+  const eventToDelete = events.find((e) => e.id === deletingEventId);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Events</h1>
-          <p className="text-muted-foreground">Manage and track your ticketing capacity.</p>
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={(open) => { if (!open && !deleting) { setConfirmDeleteOpen(false); setDeletingEventId(null); } }}>
+        <DialogContent className="sm:max-w-[400px] bg-card/95 backdrop-blur-xl border-white/10 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-red-400 flex items-center gap-2">
+              <Trash className="h-5 w-5" /> Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground pt-1">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">&ldquo;{eventToDelete?.title}&rdquo;</span>?
+              This will permanently remove the event and <strong>all its bookings</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4 gap-3">
+            <Button
+              variant="outline"
+              className="border-white/10 hover:bg-white/5"
+              onClick={() => { setConfirmDeleteOpen(false); setDeletingEventId(null); }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-500 text-white gap-2 shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.5)] transition-all"
+            >
+              {deleting ? <><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</> : <><Trash className="h-4 w-4" /> Yes, Delete</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-heading font-extrabold tracking-tight text-gradient">Events Dashboard</h1>
+          <p className="text-muted-foreground font-light">Manage and track your ticketing capacity.</p>
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -152,27 +198,27 @@ export default function EventsDashboard() {
           if (!open) setEditingEvent(null);
         }}>
           <DialogTrigger asChild>
-            <Button className="gap-2 shadow-lg hover:shadow-primary/20 transition-all duration-300">
-              <Plus className="h-4 w-4" /> Create Event
+            <Button className="gap-2 shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.6)] hover:-translate-y-0.5 transition-all duration-300 rounded-xl h-12 px-6">
+              <Plus className="h-5 w-5" /> Create Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] bg-card/95 backdrop-blur-xl border-white/10 shadow-2xl">
             <DialogHeader>
-              <DialogTitle>{editingEvent ? "Edit Event" : "Create Event"}</DialogTitle>
+              <DialogTitle className="font-heading text-xl">{editingEvent ? "Edit Event" : "Create Event"}</DialogTitle>
               <DialogDescription>
                 Fill in the event details below. Click save to publish changes.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4">
                 <FormField
                   control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Event Title</FormLabel>
+                      <FormLabel className="text-muted-foreground">Event Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Summer Concert" {...field} />
+                        <Input placeholder="e.g., Summer Concert" className="bg-black/20 border-white/10 focus-visible:ring-primary h-12" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,9 +229,9 @@ export default function EventsDashboard() {
                   name="date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Event Date</FormLabel>
+                      <FormLabel className="text-muted-foreground">Event Date</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" className="bg-black/20 border-white/10 focus-visible:ring-primary h-12" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -196,11 +242,12 @@ export default function EventsDashboard() {
                   name="total_capacity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Total Capacity</FormLabel>
+                      <FormLabel className="text-muted-foreground">Total Capacity</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           min={1}
+                          className="bg-black/20 border-white/10 focus-visible:ring-primary h-12"
                           value={field.value}
                           onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                           onBlur={field.onBlur}
@@ -208,7 +255,7 @@ export default function EventsDashboard() {
                           ref={field.ref}
                         />
                       </FormControl>
-                      <FormDescription>
+                      <FormDescription className="text-xs">
                         Total seats or tickets available for booking.
                       </FormDescription>
                       <FormMessage />
@@ -216,10 +263,10 @@ export default function EventsDashboard() {
                   )}
                 />
                 <DialogFooter className="pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  <Button type="button" variant="outline" className="border-white/10 hover:bg-white/5" onClick={() => setDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Save Changes</Button>
+                  <Button type="submit" className="shadow-[0_0_15px_rgba(var(--primary),0.3)]">Save Changes</Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -228,80 +275,92 @@ export default function EventsDashboard() {
       </div>
 
       {/* Analytics Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="hover:border-primary/30 transition-colors duration-300 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <Calendar className="h-4 w-4 text-primary" />
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Calendar className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalEvents}</div>
-            <p className="text-xs text-muted-foreground">Upcoming & active events</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black">{loading ? "..." : totalEvents}</div>
+            <p className="text-xs text-muted-foreground mt-1">Upcoming & active events</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-colors duration-300 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Capacity</CardTitle>
-            <Users className="h-4 w-4 text-primary" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Capacity</CardTitle>
+            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+              <Users className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalCapacity}</div>
-            <p className="text-xs text-muted-foreground">Available tickets configured</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black">{loading ? "..." : totalCapacity}</div>
+            <p className="text-xs text-muted-foreground mt-1">Available tickets configured</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-colors duration-300 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tickets Booked</CardTitle>
-            <Ticket className="h-4 w-4 text-primary" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tickets Booked</CardTitle>
+            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+              <Ticket className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : totalBooked}</div>
-            <p className="text-xs text-muted-foreground">Across all bookings</p>
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black text-emerald-400">{loading ? "..." : totalBooked}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all bookings</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/30 transition-colors duration-300 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Occupancy</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+        <Card className="glass-card hover:-translate-y-1 transition-all duration-300 border-white/10 overflow-hidden relative group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overall Occupancy</CardTitle>
+            <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+              <TrendingUp className="h-5 w-5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{loading ? "..." : `${overallOccupancy}%`}</div>
-            <Progress value={overallOccupancy} className="h-2 mt-2" />
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-heading font-black">{loading ? "..." : `${overallOccupancy}%`}</div>
+            <Progress value={overallOccupancy} className="h-2 mt-3 bg-white/5" />
           </CardContent>
         </Card>
       </div>
 
       {/* Events Table Section */}
-      <Card className="shadow-sm border-muted-foreground/10 overflow-hidden">
-        <CardHeader className="bg-card/50">
-          <CardTitle>All Events</CardTitle>
+      <Card className="glass-card border-white/10 overflow-hidden">
+        <CardHeader className="bg-white/5 border-b border-white/5 pb-4">
+          <CardTitle className="font-heading text-xl">All Events</CardTitle>
           <CardDescription>View, edit, and delete scheduled events.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4 animate-pulse">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p>Fetching active events...</p>
             </div>
           ) : events.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-              <AlertCircle className="h-8 w-8 text-muted-foreground" />
-              <p>No events found. Create one to get started!</p>
+            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-4">
+              <AlertCircle className="h-10 w-10 text-muted-foreground/50" />
+              <p className="text-lg">No events found. Create one to get started!</p>
             </div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-6">Title</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-center">Total Capacity</TableHead>
-                  <TableHead className="text-center">Booked</TableHead>
-                  <TableHead className="text-center">Available</TableHead>
-                  <TableHead className="w-[200px]">Booking Capacity Rate</TableHead>
-                  <TableHead className="text-right pr-6">Actions</TableHead>
+              <TableHeader className="bg-black/20">
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="pl-6 font-semibold text-muted-foreground h-12">Title</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground h-12">Date</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground h-12">Total Capacity</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground h-12">Booked</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground h-12">Available</TableHead>
+                  <TableHead className="w-[200px] font-semibold text-muted-foreground h-12">Occupancy Rate</TableHead>
+                  <TableHead className="text-right pr-6 font-semibold text-muted-foreground h-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,35 +369,35 @@ export default function EventsDashboard() {
                   const isSoldOut = event.available_tickets === 0;
 
                   return (
-                    <TableRow key={event.id} className="hover:bg-accent/30 group">
+                    <TableRow key={event.id} className="border-white/5 hover:bg-white/5 transition-colors group">
                       <TableCell className="font-semibold pl-6">{event.title}</TableCell>
-                      <TableCell>{new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'medium' })}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(event.date).toLocaleDateString('en-US', { dateStyle: 'medium' })}</TableCell>
                       <TableCell className="text-center">{event.total_capacity}</TableCell>
-                      <TableCell className="text-center font-medium text-primary">{event.booked_tickets}</TableCell>
+                      <TableCell className="text-center font-bold text-primary">{event.booked_tickets}</TableCell>
                       <TableCell className="text-center">
                         {isSoldOut ? (
-                          <Badge variant="destructive">Sold Out</Badge>
+                          <Badge variant="destructive" className="bg-red-500/20 text-red-400 border border-red-500/30">Sold Out</Badge>
                         ) : (
                           <span className="font-semibold">{event.available_tickets}</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={percentBooked} className="h-2 w-24" />
+                        <div className="flex items-center gap-3">
+                          <Progress value={percentBooked} className="h-2 w-24 bg-white/5" />
                           <span className="text-xs font-semibold text-muted-foreground">{percentBooked}%</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-6">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/10 text-muted-foreground hover:text-foreground">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[160px]">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
+                          <DropdownMenuContent align="end" className="w-[160px] bg-card/95 backdrop-blur-xl border-white/10">
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuItem asChild className="hover:bg-white/10 focus:bg-white/10">
                               <Link href={`/admin/events/${event.id}/bookings`} className="cursor-pointer">
                                 <Eye className="mr-2 h-4 w-4 text-primary" /> View Bookings
                               </Link>
@@ -346,11 +405,11 @@ export default function EventsDashboard() {
                             <DropdownMenuItem onClick={() => {
                               setEditingEvent(event);
                               setDialogOpen(true);
-                            }} className="cursor-pointer">
+                            }} className="cursor-pointer hover:bg-white/10 focus:bg-white/10">
                               <Edit className="mr-2 h-4 w-4" /> Edit Event
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleDelete(event.id)} className="text-destructive focus:bg-destructive/10 cursor-pointer">
+                            <DropdownMenuSeparator className="bg-white/10" />
+                            <DropdownMenuItem onClick={() => openDeleteConfirm(event.id)} className="text-red-400 focus:bg-red-500/20 focus:text-red-300 cursor-pointer">
                               <Trash className="mr-2 h-4 w-4" /> Delete Event
                             </DropdownMenuItem>
                           </DropdownMenuContent>
