@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getEvents, Event } from "@/lib/api";
-import { Calendar, Ticket, User, ArrowRight, Loader2, ShieldCheck, Search, Users } from "lucide-react";
+import { ArrowRight, Loader2, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { PublicHeader } from "@/components/public/header";
 
 export default function EventsListingPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -22,7 +23,7 @@ export default function EventsListingPage() {
         setLoading(true);
         const data = await getEvents();
         setEvents(data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load events. Is the Laravel server running?");
       } finally {
         setLoading(false);
@@ -41,24 +42,7 @@ export default function EventsListingPage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
       <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[150px] pointer-events-none" />
 
-      {/* Premium Header */}
-      <header className="border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto max-w-7xl px-4 md:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-primary/20 border border-primary/50 text-primary p-2 rounded-xl group-hover:scale-105 transition-transform duration-300">
-              <Ticket className="h-6 w-6" />
-            </div>
-            <span className="font-heading font-extrabold text-2xl tracking-tight text-gradient">
-              TicketFlow
-            </span>
-          </Link>
-          <Button asChild variant="outline" className="gap-2 border-white/10 hover:bg-white/5 transition-all duration-300">
-            <Link href="/admin/events">
-              <ShieldCheck className="h-4 w-4 text-primary" /> Admin Portal
-            </Link>
-          </Button>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="py-12 md:py-20 text-center relative z-10">
@@ -66,15 +50,23 @@ export default function EventsListingPage() {
           <Badge className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 font-medium animate-fade-in-up">
             Live Ticket Bookings
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-heading font-black tracking-tight leading-none animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Book Tickets for <br className="md:hidden" /><span className="text-gradient">Popular Events</span>
+          <h1
+            className="text-4xl md:text-6xl font-heading font-black tracking-tight leading-none animate-fade-in-up"
+            style={{ animationDelay: "0.1s" }}
+          >
+            Book Tickets for <br className="md:hidden" />
+            <span className="text-gradient">Popular Events</span>
           </h1>
-          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto font-light animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            Secure, reliable booking for concerts, conferences, art showcases, and charity drives. Get yours before they sell out.
+          <p
+            className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto font-light animate-fade-in-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            Secure, reliable booking for concerts, conferences, art showcases, and charity drives.
+            Get yours before they sell out.
           </p>
 
-          {/* Search bar widget */}
-          <div className="max-w-md mx-auto pt-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+          {/* Search bar */}
+          <div className="max-w-md mx-auto pt-6 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
             <div className="relative group">
               <Search className="absolute left-4 top-4 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
@@ -100,14 +92,18 @@ export default function EventsListingPage() {
             <Users className="h-12 w-12 text-muted-foreground" />
             <div className="text-center">
               <h3 className="font-heading font-bold text-lg text-foreground">No events found</h3>
-              <p className="text-sm text-muted-foreground mt-1">Try adjusting your search filters or check back later.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Try adjusting your search filters or check back later.
+              </p>
             </div>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredEvents.map((event, index) => {
               const isSoldOut = event.available_tickets === 0;
-              const fillPercentage = Math.round((event.booked_tickets / event.total_capacity) * 100);
+              const fillPercentage = Math.round(
+                (event.booked_tickets / event.total_capacity) * 100
+              );
               const delay = `${0.1 * (index % 6)}s`;
 
               return (
@@ -119,12 +115,12 @@ export default function EventsListingPage() {
                   <CardHeader className="space-y-3 pb-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="text-xs border-white/10 bg-white/5 font-medium">
-                        {new Date(event.date).toLocaleDateString("en-US", {
-                          dateStyle: "medium",
-                        })}
+                        {new Date(event.date).toLocaleDateString("en-US", { dateStyle: "medium" })}
                       </Badge>
                       {isSoldOut ? (
-                        <Badge variant="destructive" className="shadow-[0_0_10px_rgba(var(--destructive),0.4)]">Sold Out</Badge>
+                        <Badge variant="destructive" className="shadow-[0_0_10px_rgba(var(--destructive),0.4)]">
+                          Sold Out
+                        </Badge>
                       ) : event.available_tickets < 10 ? (
                         <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30">
                           Only {event.available_tickets} left!
@@ -143,8 +139,6 @@ export default function EventsListingPage() {
                     <CardDescription className="text-sm text-muted-foreground/80 font-light">
                       Join us for a wonderful experience. Secure your place now to avoid disappointment.
                     </CardDescription>
-
-                    {/* Progress details */}
                     <div className="space-y-2 p-3 bg-black/20 rounded-xl border border-white/5">
                       <div className="flex justify-between text-xs font-semibold text-muted-foreground">
                         <span>Booked: {event.booked_tickets}/{event.total_capacity}</span>
@@ -157,7 +151,7 @@ export default function EventsListingPage() {
                     <Button
                       asChild
                       className={`w-full group/btn relative overflow-hidden h-12 rounded-xl text-md font-bold transition-all duration-300 ${
-                        isSoldOut 
+                        isSoldOut
                           ? "bg-white/5 text-muted-foreground border border-white/10 cursor-not-allowed hover:bg-white/5"
                           : "shadow-[0_0_15px_rgba(var(--primary),0.3)] hover:shadow-[0_0_25px_rgba(var(--primary),0.6)]"
                       }`}
@@ -166,7 +160,10 @@ export default function EventsListingPage() {
                       {isSoldOut ? (
                         <span className="flex items-center justify-center">Sold Out</span>
                       ) : (
-                        <Link href={`/events/${event.id}/book`} className="flex items-center justify-center gap-2 w-full h-full">
+                        <Link
+                          href={`/events/${event.id}/book`}
+                          className="flex items-center justify-center gap-2 w-full h-full"
+                        >
                           Book Now
                           <ArrowRight className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform" />
                         </Link>
